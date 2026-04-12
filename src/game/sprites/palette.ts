@@ -1,0 +1,96 @@
+// 통일 색상 팔레트
+export const P = {
+  // Skin
+  SKIN_LIGHT: "#FDDCB5",
+  SKIN_MID: "#F5C49A",
+  SKIN_DARK: "#E8A878",
+
+  // Hair
+  HAIR_BROWN: "#8B6543",
+  HAIR_DARK: "#5C4033",
+
+  // Rags (누더기)
+  RAG_LIGHT: "#C4A882",
+  RAG_MID: "#A8896A",
+  RAG_DARK: "#8B6F52",
+
+  // White Shirt
+  SHIRT_WHITE: "#F5F0E8",
+  SHIRT_SHADOW: "#E8E0D4",
+  SHIRT_DARK: "#D4C8B8",
+
+  // Denim
+  DENIM_LIGHT: "#7EB4D8",
+  DENIM_MID: "#5C9AC4",
+  DENIM_DARK: "#4A82A8",
+
+  // Leather
+  LEATHER_LIGHT: "#B8845C",
+  LEATHER_MID: "#9C6E48",
+  LEATHER_DARK: "#7A5636",
+
+  // Miner Uniform
+  UNIFORM_LIGHT: "#F0C878",
+  UNIFORM_MID: "#E0B060",
+  UNIFORM_DARK: "#C89840",
+
+  // Golden Armor
+  GOLD_BRIGHT: "#FFD700",
+  GOLD_MID: "#F0C060",
+  GOLD_DARK: "#D4A840",
+
+  // Royal
+  ROYAL_LIGHT: "#C8A8E8",
+  ROYAL_MID: "#B490D8",
+  ROYAL_DARK: "#9C78C0",
+
+  // Tools
+  STONE_LIGHT: "#A0A0A0",
+  STONE_DARK: "#808080",
+  WOOD_LIGHT: "#C49A6C",
+  WOOD_DARK: "#A07848",
+  IRON_LIGHT: "#B0B8C4",
+  IRON_DARK: "#8890A0",
+  GOLD_TOOL: "#FFD700",
+  GOLD_TOOL_DARK: "#E0B840",
+  DIAMOND_LIGHT: "#88D8E8",
+  DIAMOND_DARK: "#60C0D4",
+  MITHRIL_LIGHT: "#A8C8E0",
+  MITHRIL_DARK: "#88B0D0",
+  ORIHALCON_LIGHT: "#88D8A8",
+  ORIHALCON_DARK: "#60C090",
+  DRAGON_LIGHT: "#F0A878",
+  DRAGON_DARK: "#E08860",
+  STAR_LIGHT: "#E8D8FF",
+  STAR_DARK: "#D8C0F0",
+
+  // Pet
+  PET_WHITE: "#FFFFFF",
+  PET_CREAM: "#F0ECE4",
+  PET_SHADOW: "#D8D0C4",
+  PET_EYE: "#303030",
+  PET_TONGUE: "#F0A0A0",
+  PET_NOSE: "#404040",
+
+  // UI
+  EXP_BAR: "#5C9AE8",
+  EXP_BAR_LIGHT: "#88B8F0",
+  GOLD_UI: "#FFD700",
+
+  // Effects
+  SPARKLE: "#FFFFFF",
+  PARTICLE_GOLD: "#FFE880",
+
+  // General
+  BLACK: "#000000",
+  TRANSPARENT: "transparent",
+  WHITE: "#FFFFFF",
+
+  // Background tones
+  BG_SKY_MORNING: "#FFE4C4",
+  BG_SKY_DAY: "#B8D8F0",
+  BG_GRASS: "#90D080",
+  BG_CAVE: "#6A6080",
+  BG_OCEAN: "#70B8D0",
+  BG_CLOUD: "#F0E8FF",
+} as const;
