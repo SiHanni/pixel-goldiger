@@ -3,207 +3,409 @@ import { P } from "./palette";
 type SpriteData = string[];
 type ColorMap = Record<string, string>;
 
-const W = 28;
+const W = 26;
 function p(s: string): string { return s.padEnd(W, "."); }
 
-// 고퀄 캐릭터 스프라이트 (18행 × 28열)
-// O=외곽선 h=머리밝은 H=머리어두운 s=피부 S=피부밝은 d=피부그림자
-// e=눈 p=볼블러시 n=코하이라이트 m=입
-// B=상의 b=상의어두운 W=상의하이라이트
-// L=하의 l=하의어두운 F=신발 f=신발하이라이트
-// T=도구머리 t=도구자루 v=도구하이라이트
-// A=모자/액세서리 C=왕관 c=왕관보석 G=헬멧
+// ── 심볼 ─────────────────────────────────────────────────────────
+// .=투명  O=아웃라인(진한)  o=아웃라인(부드러운)
+// H=머리카락HL  h=머리카락미드  k=머리카락딥
+// S=피부HL  s=피부미드  d=피부딥
+// E=눈(큰, 2칸 사용)  R=눈반사  p=볼블러시  m=입
+// B=상의HL  b=상의미드  c=상의딥
+// G=벨트  g=벨트딥
+// L=하의HL  l=하의미드  j=하의딥
+// F=발HL  f=발미드
+// Q=곡괭이날HL  q=곡괭이날미드  u=곡괭이날딥
+// a=자루HL  z=자루딥
+// A=모자HL  V=모자미드  X=모자딥
+// C=왕관금  D=왕관보석
 
-function run1(hasTool: boolean): SpriteData {
-  const top = hasTool ? [
-    p("..............tO............"),
-    p(".............tvO............"),
-    p("............tTTO............"),
-  ] : [p(""), p(""), p("")];
-  return [...top,
-    p("........OhhhHO.............."),
-    p(".......OhhhhhhHO............"),
-    p("......OhhhhhhhHhO..........."),
-    p("......OhOSspSOhHO..........."),
-    p("......OdSennSdsO............"),
-    p(".......OdsmssdO............."),
-    p("........OssssO.............."),
-    p("........OWBBO..............."),
-    p(".......OWBBBBbO............."),
-    p("......OBBBBBBBbO............"),
-    p("......OBBBbBBBbO............"),
-    p(".......OBBBBBO.............."),
-    p("......OLLdOlLLO............."),
-    p("......OlLO..OlLO............"),
-    p(".......OfF....OfO.........."),
-  ].map(p);
+// ══════════════════════════════════════════════════════════════════
+// 얼굴 디자인 원칙:
+//  - 머리 9칸 넓이 (몸 6칸보다 훨씬 넓음 → 치비)
+//  - 눈 = EE (2칸 = 6px) 두 개, 사이 1칸 공백
+//  - 볼 블러시 p
+//  - 단순한 입 m 1칸
+// ══════════════════════════════════════════════════════════════════
+
+// Lv1-3: 맨머리 (갈색 단발) — 6행 (머리:몸 = 6:8)
+const HEAD: SpriteData = [
+  p("....OkhhhhkO......."),   // 정수리 (좁게 → 돔 느낌)
+  p("...OkHHSSHHkO......"),   // 머리카락+앞머리
+  p("...OhSERsERdO......"),   // 눈 (R=흰 반짝 → 눈 더 선명)
+  p("...OhSpSSSpdO......"),   // 볼블러시
+  p("...OhSSSmSSOO......"),   // 입
+  p("....OdSSSdO........"),   // 턱
+];
+
+// Lv4-6: 광부 헬멧 (노란 헬멧) — 6행
+const HEAD_HELMET: SpriteData = [
+  p("...OXVVVVVXoO......"),   // 헬멧 (살짝 좁은 돔)
+  p("..OXhHSSSShdXO....."),   // 이마
+  p("...OhSERsERdO......"),   // 눈 (R=흰 반짝 → 눈 더 선명)
+  p("...OhSpSSSpdO......"),   // 볼블러시
+  p("...OhSSSmSSdO......"),   // 입
+  p("....OdSSSdO........"),   // 턱
+];
+
+// Lv7-8: 황금 투구 — 6행
+const HEAD_GOLDHELM: SpriteData = [
+  p("...OXVVVVVVXoO....."),   // 투구 (살짝 좁은 돔)
+  p("..OXhHSSSShdXO....."),   // 이마
+  p("...OhSERsERdO......"),   // 눈 (R=흰 반짝 → 눈 더 선명)
+  p("...OhSpSSSpdO......"),   // 볼
+  p("...OhSSSmSSdO......"),   // 입
+  p("....OdSSSdO........"),   // 턱
+];
+
+// Lv9-10: 왕관 (보석 박힌 금 왕관) — 7행 (왕관 날 보존)
+const HEAD_CROWN: SpriteData = [
+  p("..OCDC.CDC.CDCO...."),   // 왕관 날 (C=금, D=보석)
+  p("..OCCCCCCCCCCO....."),   // 왕관 띠
+  p("..OChHSSSShdCO....."),   // 이마
+  p("...OhSERsERdO......"),   // 눈 (R=흰 반짝 → 눈 더 선명)
+  p("...OhSpSSSpdO......"),   // 볼
+  p("...OhSSSmSSdO......"),   // 입
+  p("....OdSSSdO........"),   // 턱
+];
+
+// ══════════════════════════════════════════════════════════════════
+// 곡괭이 — 레벨별 3단계 크기로 레벨 표현
+// q=날어두운  Q=날밝은  u=날끝하이라이트
+// a=자루밝은  z=자루어두운  s=손(피부색)
+// ══════════════════════════════════════════════════════════════════
+
+// Lv2-3: 돌/구리 — 작은 곡괭이 (블레이드 3칸)
+const PICK_SMALL_A: SpriteData = [
+  p("...........OqquO..."),
+  p("..........OQqsaO..."),   // s=손(피부)
+  p("...........OsazO..."),
+  p("............OzO...."),
+];
+const PICK_SMALL_B: SpriteData = [
+  p("............OqquO.."),
+  p("...........OQqsaO.."),
+  p("............OsazO.."),
+  p(".............OzO..."),
+];
+
+// Lv4-6: 철/강철/금 — 중형 곡괭이 (블레이드 4칸)
+const PICK_MED_A: SpriteData = [
+  p("..........OqquuO..."),
+  p(".........OQQqsaO..."),   // s=손
+  p("..........OQsazO..."),
+  p("...........OsazO..."),
+];
+const PICK_MED_B: SpriteData = [
+  p("...........OqquuO.."),
+  p("..........OQQqsaO.."),
+  p("...........OQsazO.."),
+  p("............OsazO.."),
+];
+
+// Lv7-10: 미스릴~별빛 — 대형 곡괭이 (블레이드 6칸, 존재감 압도)
+const PICK_LARGE_A: SpriteData = [
+  p(".........OqqquuuO.."),   // 블레이드 6칸
+  p(".........OQQQqsaO.."),   // s=손
+  p("..........OQsazO..."),
+  p("...........OsazO..."),
+];
+const PICK_LARGE_B: SpriteData = [
+  p("..........OqqquuuO."),
+  p("..........OQQQqsaO."),
+  p("...........OQsazO.."),
+  p("............OsazO.."),
+];
+
+// 채굴 올리기용 (양손 머리 위)
+const PICK_UP: SpriteData = [
+  p("....OuuqQQQQQO....."),   // 날 (수평)
+  p("....OuqQQQQQQO....."),   // 날 하단
+  p(".........sOazOs...."),   // 양손(s) 자루 잡기
+  p(".........sOazOs...."),   // 자루
+];
+const PICK_UP_LARGE: SpriteData = [
+  p("...OuuuqQQQQQQO...."),   // 대형 날
+  p("...OuuqQQQQQQQO...."),   // 날 하단
+  p(".........sOaazOs..."),   // 양손(s) 굵은 자루
+  p("..........sOazOs..."),   // 자루
+];
+
+function getPick(level: number, frame: 0|1|2|3): SpriteData {
+  if (level < 2) return [p(""), p(""), p(""), p("")];
+  const isA = frame % 2 === 0;
+  if (level <= 3) return isA ? PICK_SMALL_A : PICK_SMALL_B;
+  if (level <= 6) return isA ? PICK_MED_A   : PICK_MED_B;
+  return isA ? PICK_LARGE_A : PICK_LARGE_B;
 }
 
-function run2(hasTool: boolean): SpriteData {
-  const top = hasTool ? [
-    p("..............tO............"),
-    p(".............tvO............"),
-    p("............tTTO............"),
-  ] : [p(""), p(""), p("")];
-  return [...top,
-    p("........OhhhHO.............."),
-    p(".......OhhhhhhHO............"),
-    p("......OhhhhhhhHhO..........."),
-    p("......OhOSspSOhHO..........."),
-    p("......OdSennSdsO............"),
-    p(".......OdsmssdO............."),
-    p("........OssssO.............."),
-    p("........OWBBO..............."),
-    p(".......OWBBBBbO............."),
-    p("......OBBBBBBBbO............"),
-    p("......OBBBbBBBbO............"),
-    p(".......OBBBBBO.............."),
-    p(".......OLLdLlO.............."),
-    p("......OlLO.OlLO............."),
-    p("......OfF...OfFO............"),
-  ].map(p);
+// ══════════════════════════════════════════════════════════════════
+// 달리기 4프레임
+// ══════════════════════════════════════════════════════════════════
+function makeRun(head: SpriteData, frame: 0|1|2|3, level: number): SpriteData {
+  const pick = getPick(level, frame);
+  // 레벨 2 이상이면 어깨에 팔(SO=피부+아웃라인) 표시
+  // 어깨를 1px 넓게 (O at 4,11) → 어깨>가슴>허리 테이퍼 실루엣
+  const sh = level >= 2
+    ? p("....OcbBBbcOSO.....") // 어깨 (넓게) + 팔 보임
+    : p("....OcbBBbcO.........");
+
+  const bodies: SpriteData[] = [
+    // frame 0: 오른발 앞
+    [
+      sh,
+      p(".....ObBBBbO......."),  // 가슴
+      p(".....ObBGgbO......."),  // 벨트
+      p("......OcBBcO......."),  // 허리
+      p("......OcLlcO......."),   // 힙 (좁게 → 허리 라인)
+      p(".....OLLljO.OljO..."),  // 허벅지
+      p("....OlLO....OjO...."),  // 정강이
+      p(".....OfFO....OfO..."),  // 발
+    ],
+    // frame 1: 중간
+    [
+      sh,
+      p(".....ObBBBbO......."),
+      p(".....ObBGgbO......."),
+      p("......OcBBcO......."),
+      p("......OcLlcO......."),   // 힙 (좁게 → 허리 라인)
+      p(".....OLLlljO......."),
+      p("....OlLO.OljO......"),
+      p(".....OfFO.OFfO....."),
+    ],
+    // frame 2: 왼발 앞
+    [
+      sh,
+      p(".....ObBBBbO......."),
+      p(".....ObBGgbO......."),
+      p("......OcBBcO......."),
+      p("......OcLlcO......."),   // 힙 (좁게 → 허리 라인)
+      p(".....OLlO.OLlO....."),
+      p("....OljO...OlO....."),
+      p(".....OfO...OfFO...."),
+    ],
+    // frame 3: 중간 반대 (frame1 좌우 미러)
+    [
+      sh,
+      p(".....ObBBBbO......."),
+      p(".....ObBGgbO......."),
+      p("......OcBBcO......."),
+      p("......OcLlcO......."),
+      p(".....OLlljO......."),   // 허벅지 모임
+      p("....OljO.OlLO......"),  // 왼쪽 구부러짐, 오른쪽 펴짐
+      p(".....OFfO.OfFO....."),  // 발
+    ],
+  ];
+
+  return [...pick, ...head, ...bodies[frame]];
 }
 
-function run3(hasTool: boolean): SpriteData {
-  const top = hasTool ? [
-    p("..............tO............"),
-    p(".............tvO............"),
-    p("............tTTO............"),
-  ] : [p(""), p(""), p("")];
-  return [...top,
-    p("........OhhhHO.............."),
-    p(".......OhhhhhhHO............"),
-    p("......OhhhhhhhHhO..........."),
-    p("......OhOSspSOhHO..........."),
-    p("......OdSennSdsO............"),
-    p(".......OdsmssdO............."),
-    p("........OssssO.............."),
-    p("........OWBBO..............."),
-    p(".......OWBBBBbO............."),
-    p("......OBBBBBBBbO............"),
-    p("......OBBBbBBBbO............"),
-    p(".......OBBBBBO.............."),
-    p(".......OLLdLlO.............."),
-    p("......OlLO..OlLO............"),
-    p(".......OfF...OfO............"),
-  ].map(p);
-}
-
-function mineUp(): SpriteData {
+// ══════════════════════════════════════════════════════════════════
+// 채굴 올리기 — 곡괭이 머리 위로
+// ══════════════════════════════════════════════════════════════════
+function makeMineUp(head: SpriteData, level: number): SpriteData {
+  const pu = level >= 7 ? PICK_UP_LARGE : PICK_UP;
   return [
-    p("...............OvTvO........"),
-    p("..............OvTTTvO......."),
-    p("........OhhhHOOtTTO........."),
-    p(".......OhhhhhhHOtO..........."),
-    p("......OhhhhhhhHhO............"),
-    p("......OhOSspSOhHO............"),
-    p("......OdSennSdsO............"),
-    p(".......OdsmssdO............."),
-    p("........OssssO.............."),
-    p("........OWBBO..............."),
-    p(".......OWBBBBddsO............"),
-    p("......OBBBBBBBbO............"),
-    p("......OBBBbBBBbO............"),
-    p(".......OBBBBBO.............."),
-    p(".......OLLdLlO.............."),
-    p("......OlLO.OlLO............."),
-    p("......OfF...OfFO............"),
-    p("..........................."),
-  ].map(p);
+    ...pu,
+    ...head,
+    p(".....OcbBBbcO......"),   // 어깨
+    p(".....ObBBBbO......"),    // 가슴
+    p(".....ObBGgbO......"),    // 벨트
+    p("......OcBBcO......"),    // 허리
+    p("......OcLlcO......"),    // 힙 (좁게)
+    p(".....OLLlljO......."),   // 허벅지
+    p("....OlLO.OljO......"),   // 정강이
+    p(".....OfFO.OFfO....."),   // 발
+  ];
 }
 
-function mineDown(): SpriteData {
+// ══════════════════════════════════════════════════════════════════
+// 채굴 내리기 — 곡괭이를 앞으로 내리침
+// ══════════════════════════════════════════════════════════════════
+function makeMineDown(head: SpriteData, level: number): SpriteData {
+  // 대형 곡괭이(lv7+)는 날이 더 길고 위에 위치
+  const blade = level >= 7
+    ? [
+        p(".................."),
+        ...head,
+        p(".....OcbBBbcO......"),
+        p(".....ObBBBbO......"),
+        p(".....ObBGgbO.OazO.."),
+        p("......OcBBcO.OQaazO"),
+        p("......OcLlcO.OqquuO"),   // 힙 (좁게) + 대형 날
+        p(".....OLLlljO.uqqqO."),
+        p("....OlLO.OljO......"),
+        p(".....OfFO.OFfO....."),
+      ]
+    : [
+        p(".................."),
+        ...head,
+        p(".....OcbBBbcO......"),
+        p(".....ObBBBbO......"),
+        p(".....ObBGgbO.OazO.."),
+        p("......OcBBcO.OQazO."),
+        p("......OcLlcO.OqquO."),   // 힙 (좁게) + 날
+        p(".....OLLlljO.uqqO.."),
+        p("....OlLO.OljO......"),
+        p(".....OfFO.OFfO....."),
+      ];
+  return blade;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// 아이들
+// ══════════════════════════════════════════════════════════════════
+function makeIdle(head: SpriteData): SpriteData {
   return [
-    p("..........................."),
-    p("........OhhhHO.............."),
-    p(".......OhhhhhhHO............"),
-    p("......OhhhhhhhHhO..........."),
-    p("......OhOSspSOhHO..........."),
-    p("......OdSennSdsO............"),
-    p(".......OdsmssdO............."),
-    p("........OssssO.............."),
-    p("........OWBBO..............."),
-    p(".......OWBBBBddsO............"),
-    p("......OBBBBBBBbO.OtO......."),
-    p("......OBBBbBBBbO.OtO......."),
-    p(".......OBBBBBO..OtvO......."),
-    p(".......OLLdLlO.OtTTO......."),
-    p("......OlLO.OlLOOvTTvO......"),
-    p("......OfF...OfOOvTTvO......"),
-    p("..........................."),
-    p("..........................."),
-  ].map(p);
+    p(".................."),
+    ...head,
+    p(".....OcbBbcO......."),
+    p(".....ObBBBbO......."),
+    p(".....ObBGgbO......."),
+    p("......OcBBcO......."),
+    p("......OcLlcO......."),   // 힙 (좁게)
+    p(".....OLLlljO......."),
+    p("....OlLO.OlO......."),
+    p(".....OfFO.OfFO....."),
+  ];
 }
 
-function idle(): SpriteData {
-  return [
-    p("..........................."),
-    p("........OhhhHO.............."),
-    p(".......OhhhhhhHO............"),
-    p("......OhhhhhhhHhO..........."),
-    p("......OhOSspSOhHO..........."),
-    p("......OdSennSdsO............"),
-    p(".......OdsmssdO............."),
-    p("........OssssO.............."),
-    p("........OWBBO..............."),
-    p(".......OWBBBBbO............."),
-    p("......OBBBBBBBbO............"),
-    p("......OBBBbBBBbO............"),
-    p(".......OBBBBBO.............."),
-    p(".......OLLdLlO.............."),
-    p("......OlLO.OlLO............."),
-    p("......OfF...OfFO............"),
-    p("..........................."),
-    p("..........................."),
-  ].map(p);
-}
-
+// ══════════════════════════════════════════════════════════════════
+// 색상 맵
+// ══════════════════════════════════════════════════════════════════
 function getColorMap(level: number): ColorMap {
   const base: ColorMap = {
-    ".": "transparent",
-    "": "transparent",
-    " ": "transparent",
-    O: "#1a1020",       // 외곽선
-    s: P.SKIN_MID,      // 피부
-    S: "#FFE0C8",       // 피부 하이라이트
-    d: P.SKIN_DARK,     // 피부 그림자
-    e: "#1a1020",       // 눈
-    p: "#FF9898",       // 볼 블러시
-    n: "#FFE8D0",       // 코 하이라이트
-    m: "#D8A080",       // 입/턱
-    t: "#7A5838",       // 도구 자루
-    v: "#9A7858",       // 도구 자루 하이라이트
+    ".": "transparent", "": "transparent",
+    O: "#180C08",   // 진한 아웃라인
+    o: "#3A2820",   // 부드러운 아웃라인
+    // 피부
+    S: "#FFE0C0", s: "#F0C098", d: "#C87850",
+    // 얼굴 디테일
+    E: "#201010",   // 눈 (큰 어두운 사각형)
+    R: "#FFFFFF",   // 눈 반사
+    p: "#FFAAAA",   // 볼블러시
+    m: "#C05050",   // 입 (빨간 입술 느낌)
+    // 자루
+    a: "#C8A060", z: "#7A5020",
   };
 
-  const tools: Record<number, Partial<ColorMap>> = {
-    1:  { T: P.STONE_LIGHT },
-    2:  { T: P.WOOD_LIGHT },
-    3:  { T: P.STONE_DARK },
-    4:  { T: P.IRON_LIGHT },
-    5:  { T: "#FFE040" },     // 금 곡괭이 (밝게)
-    6:  { T: "#98E8F8" },     // 다이아 (밝게)
-    7:  { T: "#B8D8F0" },     // 미스릴
-    8:  { T: "#98E0B8" },     // 오리하르콘
-    9:  { T: "#F8B888" },     // 드래곤본
-    10: { T: "#E8D0FF" },     // 별빛
+  // 머리카락 색상 (레벨별)
+  const hairs: Record<number, { H: string; h: string; k: string }> = {
+    1:  { H: "#FFD060", h: "#C09030", k: "#805010" },
+    2:  { H: "#FFD060", h: "#C09030", k: "#805010" },
+    3:  { H: "#D0C0B0", h: "#A09080", k: "#606060" },
+    4:  { H: "#C09030", h: "#906010", k: "#503808" },
+    5:  { H: "#C09030", h: "#906010", k: "#503808" },
+    6:  { H: "#80E8FF", h: "#30A8E0", k: "#105880" },
+    7:  { H: "#FFE840", h: "#D0A000", k: "#805000" },
+    8:  { H: "#FF9060", h: "#D04020", k: "#701010" },
+    9:  { H: "#E0C0FF", h: "#9850E0", k: "#501898" },
+    10: { H: "#FFFFFF", h: "#D0C0FF", k: "#9070E0" },
   };
 
-  const bodies: Record<number, Partial<ColorMap>> = {
-    1:  { h: "#9A7850", H: "#7A5838", B: "#B89870", b: "#987848", W: "#C8A880", L: "#987848", l: "#806838", F: "#A08060", f: "#B89878" },
-    2:  { h: "#9A7850", H: "#7A5838", B: "#B89870", b: "#987848", W: "#C8A880", L: "#987848", l: "#806838", F: "#A08060", f: "#B89878" },
-    3:  { h: "#9A7850", H: "#7A5838", B: "#C8A882", b: "#A08860", W: "#D8B898", L: "#A08860", l: "#887048", F: "#8B6543", f: "#A07858" },
-    4:  { h: "#8A6840", H: "#6A4828", B: "#F0ECE4", b: "#D8D0C4", W: "#FFFFFF", L: "#8A7A6A", l: "#6A5A4A", F: "#8B6543", f: "#A07858" },
-    5:  { h: "#8A6840", H: "#6A4828", B: "#F0ECE4", b: "#D8D0C4", W: "#FFFFFF", L: "#8A7A6A", l: "#6A5A4A", F: "#8B6543", f: "#A07858" },
-    6:  { h: "#8A6840", H: "#6A4828", B: "#88C0E0", b: "#5898C0", W: "#A0D0F0", L: "#6AA0C8", l: "#4880A8", F: "#506878", f: "#688898" },
-    7:  { h: "#483828", H: "#302018", B: "#C09068", b: "#987048", W: "#D0A078", L: "#786050", l: "#604838", F: "#604838", f: "#786050" },
-    8:  { h: "#483828", H: "#302018", B: "#F0C878", b: "#D0A858", W: "#FFD888", L: "#D0A858", l: "#B89040", F: "#605040", f: "#786858" },
-    9:  { h: "#483828", H: "#302018", B: "#F0C860", b: "#D0A840", W: "#FFE080", L: "#C89830", l: "#A87820", F: "#B89030", f: "#D0A848" },
-    10: { h: "#281830", H: "#180820", B: "#C8A8E8", b: "#A888C8", W: "#D8C0F0", L: "#A888C8", l: "#8868A8", F: "#8868A8", f: "#A888C8" },
+  type Equip = {
+    Q: string; q: string; u: string;   // 곡괭이 날
+    B: string; b: string; c: string;   // 상의
+    G: string; g: string;              // 벨트
+    L: string; l: string; j: string;   // 하의
+    F: string; f: string;              // 발
+    A: string; V: string; X: string;   // 모자
+    C: string; D: string;              // 왕관
   };
 
-  const bc = bodies[level] ?? bodies[1];
-  const tc = tools[level] ?? tools[1];
-  return { ...base, ...bc, ...tc } as ColorMap;
+  const equips: Record<number, Equip> = {
+    1: { // 돌 곡괭이 + 누더기
+      Q:"#D0C8C0", q:"#A0A098", u:"#606060",
+      B:"#C8B898", b:"#A09070", c:"#706050",
+      G:"#888060", g:"#504030",
+      L:"#A09070", l:"#706040", j:"#403020",
+      F:"#604030", f:"#806050",
+      A:"#C8B898", V:"#A09070", X:"#706050", C:"#C8B898", D:"#C8B898",
+    },
+    2: { // 구리 곡괭이 + 낡은 옷
+      Q:"#F0C080", q:"#C07030", u:"#804010",
+      B:"#D0C0A0", b:"#B0A070", c:"#807050",
+      G:"#988050", g:"#604030",
+      L:"#A89060", l:"#806040", j:"#503820",
+      F:"#604028", f:"#805048",
+      A:"#D0C0A0", V:"#B0A070", X:"#807050", C:"#D0C0A0", D:"#D0C0A0",
+    },
+    3: { // 철 곡괭이 + 흰 셔츠+청바지
+      Q:"#E8EEF8", q:"#A0B0C8", u:"#507090",
+      B:"#F8F4EC", b:"#D0C8B8", c:"#A8A090",
+      G:"#A09080", g:"#706860",
+      L:"#7EB8E0", l:"#4890C8", j:"#286898",
+      F:"#304858", f:"#508078",
+      A:"#E8E0D0", V:"#C0B8A8", X:"#907868", C:"#E8E0D0", D:"#E8E0D0",
+    },
+    4: { // 강철 곡괭이 + 광부복(파랑)
+      Q:"#D8E8F8", q:"#90B8D8", u:"#406890",
+      B:"#70B8F0", b:"#4090D0", c:"#186898",
+      G:"#F0C840", g:"#C09010",
+      L:"#3878B8", l:"#186898", j:"#0C4878",
+      F:"#284058", f:"#406878",
+      A:"#FFE040", V:"#D0A810", X:"#A07808", C:"#FFE040", D:"#FFE040",
+    },
+    5: { // 금 곡괭이 + 강화 광부복
+      Q:"#FFFF80", q:"#FFD700", u:"#A07800",
+      B:"#58A8E8", b:"#3080C8", c:"#086898",
+      G:"#FFD700", g:"#C09000",
+      L:"#205888", l:"#0C4878", j:"#083060",
+      F:"#203848", f:"#405868",
+      A:"#FFD700", V:"#D0A000", X:"#907000", C:"#FFD700", D:"#FFD700",
+    },
+    6: { // 다이아 곡괭이 + 하늘색 갑옷
+      Q:"#D8F8FF", q:"#60D0F0", u:"#1890B0",
+      B:"#40C8FF", b:"#1898D8", c:"#086090",
+      G:"#80F0FF", g:"#30C0E0",
+      L:"#1068A0", l:"#085888", j:"#043868",
+      F:"#183848", f:"#306878",
+      A:"#90F0FF", V:"#50D0F0", X:"#1898C0", C:"#90F0FF", D:"#90F0FF",
+    },
+    7: { // 미스릴 + 황금 갑옷
+      Q:"#C8E0FF", q:"#80B0F0", u:"#2860A8",
+      B:"#FFE050", b:"#D0A010", c:"#907000",
+      G:"#FFFFFF", g:"#E0D070",
+      L:"#C8A010", l:"#A07800", j:"#705000",
+      F:"#705800", f:"#A08010",
+      A:"#FFE878", V:"#D0B030", X:"#A08000", C:"#FFE878", D:"#FF6030",
+    },
+    8: { // 오리하르콘 + 드래곤 갑옷 (빨강)
+      Q:"#B0FFD0", q:"#40D080", u:"#009050",
+      B:"#FF4010", b:"#C02000", c:"#800808",
+      G:"#FF8030", g:"#D04000",
+      L:"#C01808", l:"#880408", j:"#500008",
+      F:"#400008", f:"#700010",
+      A:"#FF5020", V:"#D02808", X:"#900808", C:"#FF5020", D:"#FF5020",
+    },
+    9: { // 드래곤본 + 왕가 로브
+      Q:"#FFD8A0", q:"#F07030", u:"#A02800",
+      B:"#C890FF", b:"#8050D8", c:"#5020A8",
+      G:"#FFD700", g:"#C09000",
+      L:"#8050C8", l:"#5020A0", j:"#301870",
+      F:"#481080", f:"#702898",
+      A:"#FFD700", V:"#D0A000", X:"#907000", C:"#FFD700", D:"#FF2050",
+    },
+    10: { // 별빛 + 별빛 로브
+      Q:"#FFFFFF", q:"#E0C8FF", u:"#8050D0",
+      B:"#F0E8FF", b:"#C098F8", c:"#8858D8",
+      G:"#FFE870", g:"#D0B800",
+      L:"#C098F0", l:"#8858C8", j:"#5838A0",
+      F:"#6838A8", f:"#8858C8",
+      A:"#FFE870", V:"#D0B000", X:"#907000", C:"#FFE870", D:"#90E8FF",
+    },
+  };
+
+  const hair  = hairs[level]  ?? hairs[1];
+  const equip = equips[level] ?? equips[1];
+  return { ...base, ...hair, ...equip } as ColorMap;
+}
+
+function getHead(level: number): SpriteData {
+  if (level >= 9) return HEAD_CROWN;
+  if (level >= 7) return HEAD_GOLDHELM;
+  if (level >= 4) return HEAD_HELMET;
+  return HEAD;
 }
 
 export interface CharacterSpriteSet {
@@ -215,96 +417,130 @@ export interface CharacterSpriteSet {
 }
 
 export function getCharacterSpriteSet(level: number): CharacterSpriteSet {
-  const hasTool = level >= 2;
+  const head = getHead(level);
   return {
-    idle: idle(),
-    run: [run1(hasTool), run2(hasTool), run3(hasTool)],
-    mineUp: mineUp(),
-    mineDown: mineDown(),
+    idle:     makeIdle(head),
+    run:      ([0, 1, 2, 3] as const).map(f => makeRun(head, f, level)),
+    mineUp:   makeMineUp(head, level),
+    mineDown: makeMineDown(head, level),
     colorMap: getColorMap(level),
   };
 }
 
-// 광석 — 회색 돌에 금맥/보석, 질감 디테일 강화 (16x13)
-// R=돌밝은 r=돌중간 q=돌어두운 w=돌하이라이트 G=금/보석밝은 g=금/보석어두운
-export const ORE_SPRITES: Record<string, { data: SpriteData; colors: ColorMap }> = {
-  rock: {
-    data: [
-      ".....OOOOO......",
-      "...OOqrRRrOO....",
-      "..OqrRRwRRRrO...",
-      ".OqrRRrRRGRRqO..",
-      ".ORRrqRRGgRRRO..",
-      "OqRRwRRRRRrqRRO.",
-      "OrRRGRRwRRRRRqO.",
-      "ORRGgRRrqRRGRRO.",
-      "OqRRRRwRRRGgRqO.",
-      ".ORRrqRRRwRRRO..",
-      ".OqRRRRRrRRRqO..",
-      "..OqqRRRRRqqO...",
-      "...OOOOOOOO.....",
-    ],
-    colors: { ".": "transparent", O: "#2a2028", q: "#686058", r: "#888078", R: "#A8A098", w: "#C8C0B8", G: "#F0D050", g: "#C8A830" },
-  },
-  gold_ore: {
-    data: [
-      ".....OOOOO......",
-      "...OOqrRRrOO....",
-      "..OqrGGwRRRrO...",
-      ".OqrGgRRRGGRqO..",
-      ".ORRrRRRGgGRRO..",
-      "OqRGGRwRRRRqRRO.",
-      "OrGgGRRwRGGRRqO.",
-      "ORRrRRRqGgGRRRO.",
-      "OqRRGGwRRRRGRqO.",
-      ".ORRGgrRRRGgRO..",
-      ".OqRRRRRrRRRqO..",
-      "..OqqRRRRRqqO...",
-      "...OOOOOOOO.....",
-    ],
-    colors: { ".": "transparent", O: "#2a2028", q: "#686058", r: "#888078", R: "#A8A098", w: "#D0C8C0", G: "#FFD700", g: "#D8B020" },
-  },
-  diamond_ore: {
-    data: [
-      ".....OOOOO......",
-      "...OOqrRRrOO....",
-      "..OqrRRwRDDrO...",
-      ".OqrRDDRRdDRqO..",
-      ".ORRrdDRRwRRRO..",
-      "OqRRwRRRDDRqRRO.",
-      "OrRDDRRwdDRRRqO.",
-      "ORRdDRRrqRRDDRO.",
-      "OqRRRRwRRRRdDqO.",
-      ".ORRrqRDDRRRRO..",
-      ".OqRRRRdDRRRqO..",
-      "..OqqRRRRRqqO...",
-      "...OOOOOOOO.....",
-    ],
-    colors: { ".": "transparent", O: "#2a2028", q: "#686058", r: "#888078", R: "#A8A098", w: "#C8C0B8", D: "#A8F0FF", d: "#78D0E0" },
-  },
-  star_ore: {
-    data: [
-      ".....OOOOO......",
-      "...OOqrRRrOO....",
-      "..OqrSSRwRRrO...",
-      ".OqrsSsRRSSRqO..",
-      ".ORRrRRRsSRRRO..",
-      "OqRSSRwRRRRqRRO.",
-      "OrRsSRRwRSSRRqO.",
-      "ORRrRRRqsSRSRRO.",
-      "OqRRSSRwRRRsRqO.",
-      ".ORRsSrRSSRRRO..",
-      ".OqRRRRRsSRRqO..",
-      "..OqqRRRRRqqO...",
-      "...OOOOOOOO.....",
-    ],
-    colors: { ".": "transparent", O: "#2a2028", q: "#686058", r: "#888078", R: "#A8A098", w: "#C8C0B8", S: "#E8D8FF", s: "#C0A8E0" },
+// ══════════════════════════════════════════════════════════════════
+// 광석 스프라이트 — 각진 돌 형태 (타원 → 바위)
+// 핵심: 평평한 윗면, 수직에 가까운 측면, 비대칭 아랫면
+// ══════════════════════════════════════════════════════════════════
+
+// 금광석: 각진 바위 + 사선 금맥
+const goldOre = {
+  data: [
+    "......OOOOOO.......",   // 평평한 윗면 (6칸)
+    ".....OrrRRRrO......",   // 윗 모서리
+    "....OqrRwRRRrO.....",   // 하이라이트, 우측 확장
+    "....OqrRRRRRrqO....",  // 넓은 몸통 시작 (양쪽 수직)
+    "....OqrRGGRRrqO....",  // 금맥 1 (수직 측면 유지)
+    "....OqrGGwGGRrqO...",  // 금맥 중심 + 하이라이트
+    "....OqrRGGRRrqO....",  // 금맥 2 (수직 측면 유지)
+    "...OOqrRRRRrqO.....",  // 좌측 돌출! (바위 느낌)
+    "....OqrRRRrOO......",  // 우측 돌출! (비대칭 바위)
+    ".....OOrRrO........",  // 불규칙 하단
+    "......OOOOO........",  // 평평한 밑면
+  ],
+  colors: {
+    ".": "transparent",
+    O: "#302010",
+    w: "#FFFF80",  // 금 하이라이트
+    R: "#B0A898",  // 돌 밝은
+    r: "#808070",  // 돌 중간
+    q: "#484038",  // 돌 어두운
+    G: "#FFD700",  // 금맥
   },
 };
 
-export function getOreForLevel(level: number): { data: SpriteData; colors: ColorMap } {
+// 돌: 각진 회색 바위
+const rockOre = {
+  data: [
+    "......OOOOOO.......",   // 평평한 윗면
+    ".....OrrRRRrO......",
+    "....OqrRwRRRrO.....",   // 하이라이트
+    "....OqrRRwRRrqO....",  // 깊은 곳 하이라이트
+    "....OqrRRRRRrqO....",  // 수직 측면
+    "....OqrwRRRwRrqO...",  // 크랙 느낌 하이라이트
+    "....OqrRRwRRrqO....",  // 수직 측면
+    "...OOqrRRRRrqO.....",  // 좌측 돌출!
+    "....OqrRRwrOO......",  // 우측 돌출!
+    ".....OOrRrO........",
+    "......OOOOO........",
+  ],
+  colors: {
+    ".": "transparent",
+    O: "#282018",
+    w: "#D8D4CC",  // 하이라이트
+    R: "#B0A898",
+    r: "#808070",
+    q: "#484038",
+  },
+};
+
+// 다이아몬드 광석: 각진 바위 + 결정체
+const diamondOre = {
+  data: [
+    "......OOOOOO.......",
+    ".....OrrRRRrO......",
+    "....OqrRwRDDrO.....",   // 다이아 결정 등장
+    "....OqrRDDdRrqO....",  // 결정 확장
+    "....OqrwDDDdrqO....",  // 결정 중심
+    "....OqrDDwDDRrqO...",  // 결정 하이라이트
+    "....OqrRDDdRrqO....",  // 결정 하단
+    "...OOqrRRDRrqO.....",  // 좌측 돌출!
+    "....OqrRRRrOO......",  // 우측 돌출!
+    ".....OOrRrO........",
+    "......OOOOO........",
+  ],
+  colors: {
+    ".": "transparent",
+    O: "#001828",
+    w: "#E0FAFF",  // 다이아 하이라이트
+    R: "#B0A898", r: "#808070", q: "#484038",
+    D: "#50D8F8",  // 다이아
+    d: "#0898C0",  // 다이아 그림자
+  },
+};
+
+// 별 광석: 각진 바위 + 별빛 결정
+const starOre = {
+  data: [
+    "......OOOOOO.......",
+    ".....OrrRRRrO......",
+    "....OqrRwRSSrO.....",   // 별 결정 등장
+    "....OqrRSsssRrqO...",  // = 4+12+3=19 ✓
+    "....OqrwSSsSrqO....",  // 결정 중심
+    "....OqrSSWSsRrqO...",  // W=별빛 하이라이트
+    "....OqrRSSsRrqO....",  // 결정 하단
+    "...OOqrRRSSrqO.....",  // 좌측 돌출!
+    "....OqrRRRrOO......",  // 우측 돌출!
+    ".....OOrRrO........",
+    "......OOOOO........",
+  ],
+  colors: {
+    ".": "transparent",
+    O: "#180028",
+    w: "#FFFFFF",  // 별 하이라이트
+    W: "#FFFFC0",  // 강한 별빛
+    R: "#B0A898", r: "#808070", q: "#484038",
+    S: "#D0A8FF",  // 별 밝은
+    s: "#8030D0",  // 별 어두운
+  },
+};
+
+export const ORE_SPRITES: Record<string, { data: string[]; colors: Record<string, string> }> = {
+  gold: goldOre, rock: rockOre, diamond: diamondOre, star: starOre,
+};
+
+export function getOreForLevel(level: number): { data: string[]; colors: Record<string, string> } {
   if (level <= 3) return ORE_SPRITES.rock;
-  if (level <= 6) return ORE_SPRITES.gold_ore;
-  if (level <= 9) return ORE_SPRITES.diamond_ore;
-  return ORE_SPRITES.star_ore;
+  if (level <= 6) return ORE_SPRITES.gold;
+  if (level <= 9) return ORE_SPRITES.diamond;
+  return ORE_SPRITES.star;
 }
